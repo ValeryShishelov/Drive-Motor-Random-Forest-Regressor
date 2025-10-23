@@ -1,0 +1,23 @@
+Feature Importances table on motor vibration level: 
+      Feature  Importance
+3  M current   0.523800
+2    Sh speed  0.083601
+19   Axial dis 0.073435
+15    Compe P2 0.069065
+1     DE vibr  0.042388
+18    TI027    0.033149
+6     TI027    0.024337
+16    PI027    0.022864
+17    TI027    0.019402
+0     SI029    0.015827
+8     TI029    0.014724
+5     TI029    0.011235
+20    FI006    0.010544
+10    TI029    0.010536
+7     TI029    0.010275
+4     TI029    0.008597
+12    TI029    0.006847
+11    TI029    0.006393
+9     TI029    0.005301
+13    TI029    0.004215
+14    TI029    0.003464
