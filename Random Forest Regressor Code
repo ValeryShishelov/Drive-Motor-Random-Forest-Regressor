@@ -1,0 +1,126 @@
+# 📌 1. Load dataset
+def load_data(path):
+  dataset = pd.read_excel(path, header=0, usecols='B,C,D,F,G,J:Z', na_filter=True, na_values='Bad Input')
+  dataset = dataset.dropna()
+  print(dataset.shape)
+  return dataset
+
+
+# 📌 2. Function for filtering data
+def filter_data(df):
+  # Keep records within the defined operational range
+  df = df[(df['speed'] > 2720) & (df['speed'] < 2770) & (df['vibration'] < 5.3) & (df['vibration'] > 3.3)]
+  print(df.shape)
+  return df
+  
+
+# 📌 3. Function to train the model
+def train_model(X_train, y_train):
+  model = RandomForestRegressor(
+    n_estimators=50, criterion='friedman_mse',
+    min_samples_split=2, min_samples_leaf=1,
+    bootstrap=True, random_state=0
+  )
+  model.fit(X_train, y_train)
+  return model
+
+
+# 📌 4. Function to evaluate the model
+def evaluate_model(model, X_test, y_test):
+  predictions = model.predict(X_test)
+  mse = mean_squared_error(y_test, predictions)
+  mae = mean_absolute_error(y_test, predictions)
+  r2 = r2_score(y_test, predictions)
+
+  print(f" 📊 Model Evaluation Metrics:")
+  print(f" - MSE: {mse:.3f}")
+  print(f" - MAE: {mae:.3f}")
+  print(f" - R2 Score: {r2:.3f}")
+
+  return predictions
+
+
+# 📌 5. Function to visualize feature importance
+def plot_feature_importance(model, feature_names):
+  feature_importance_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Importance': model.feature_importances_
+  }).sort_values(by='Importance', ascending=False)
+
+  # Print feature importance table
+  print("\n🔹 Feature Importances:")
+  print(feature_importance_df)
+  
+  # Plot Partial Dependence Display for key features
+  features = [3, 2, (3, 2)]
+
+  # Plot partial dependence for shaft speed and motor current
+  display = PartialDependenceDisplay.from_estimator(
+    model, 
+    test_features,                   # Use test data for visualization
+    features=features,
+    feature_names=feature_names,     # Display names for axes
+    #kind='both',                    # Plot individual and average effects
+    grid_resolution=50,              # Higher value = smoother plots
+    line_kw={"markersize": 0},       # Remove scatter markers
+  )
+
+  # Add grid lines to all subplots
+  for pd_ax in display.axes_.ravel():
+      pd_ax.grid(True, linestyle="--", alpha=0.6)  # Add grid with custom styling
+
+  # Add colorbar for the 2D partial dependence plot
+  for pd_ax in display.axes_.ravel():
+      # Ensure you're targeting the correct 2D axis
+      if hasattr(pd_ax, "collections") and pd_ax.collections:
+          colorbar = pd_ax.figure.colorbar(pd_ax.collections[0], ax=pd_ax, orientation="vertical")
+          colorbar.set_label("Predicted Vibration Level")
+
+  plt.show()
+
+  
+
+# --- 📌 Main script ---
+
+
+# 📍 1. Load dataset
+path = 'path'
+dataset = load_data(path)
+print(" ✅ Data Loaded Successfully\n", dataset.head())
+
+
+# 📍 2. Split data into train and test sets
+train_dataset, test_dataset = train_test_split(dataset, test_size=0.1, random_state=1)
+
+
+# 📍 3. Apply operational data filtering
+train_dataset = filter_data(train_dataset)
+test_dataset = filter_data(test_dataset)
+
+
+# 📍 4. Separate features and target variable
+train_labels = train_dataset.pop('vibration')
+test_labels = test_dataset.pop('vibration')
+feature_names = train_dataset.columns
+
+
+# 📍 5. Data normalization (RandomForestRegressor does not require scaling)
+#scaler = MinMaxScaler()
+#train_features = scaler.fit_transform(train_dataset)
+#test_features = scaler.transform(test_dataset)
+
+# Use raw feature values without normalization
+train_features = train_dataset  
+test_features = test_dataset
+
+
+# 📍 6. Train model
+model = train_model(train_features, train_labels)
+
+
+# 📍 7. Model evaluation
+predictions = evaluate_model(model, test_features, test_labels)
+
+
+# 📍 8. Feature importance analysis
+plot_feature_importance(model, feature_names)
